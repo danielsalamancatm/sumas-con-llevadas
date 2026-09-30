@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resuelve las Operaciones (D y U) - 1ro de Primaria</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti para celebraciones -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+            50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+        }
+        .animate-bounce-slow { animation: bounce-slow 2s infinite; }
+        /* Ocultar flechas en inputs de número */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-sky-200 via-indigo-100 to-pink-200 min-h-screen flex flex-col items-center justify-center p-4 font-sans select-none">
+
+    <!-- Contenedor Principal -->
+    <div class="bg-white rounded-3xl shadow-2xl p-6 md:p-8 max-w-md w-full text-center border-4 border-yellow-300 relative overflow-hidden">
+        
+        <!-- Pantalla de Inicio / Menú -->
+        <div id="pantalla-inicio" class="transition-all duration-300">
+            <div class="text-6xl mb-3 animate-bounce-slow">📝✏️🔢</div>
+            <h1 class="text-3xl font-extrabold text-indigo-600 mb-2">¡Resuelve las Operaciones!</h1>
+            <p class="text-gray-600 mb-6 text-sm">Coloca los números en las casillas de <strong>Decenas (D)</strong> y <strong>Unidades (U)</strong> como en tu ficha. ¡Tienes 3 vidas!</p>
+            
+            <div class="flex flex-col gap-3">
+                <button onclick="iniciarJuego('facil')" class="bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold text-lg py-3 px-6 rounded-2xl shadow-lg transform hover:scale-105 transition flex items-center justify-center gap-2 border-2 border-emerald-300">
+                    <span>⭐ Sumas Fáciles (Sin/Con Llevar)</span>
+                </button>
+                <button onclick="iniciarJuego('reto')" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-extrabold text-lg py-3 px-6 rounded-2xl shadow-lg transform hover:scale-105 transition flex items-center justify-center gap-2 border-2 border-purple-300">
+                    <span>🚀 Retos Mágicos</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pantalla de Juego -->
+        <div id="pantalla-juego" class="hidden transition-all duration-300">
+            
+            <!-- Barra Superior (Progreso y Vidas) -->
+            <div class="flex justify-between items-center mb-4 bg-gray-50 p-3 rounded-2xl border border-gray-200">
+                <div class="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                    🎯 Aciertos: <span id="contador-aciertos" class="text-base bg-indigo-100 px-2 py-0.5 rounded-lg">1</span>/10
+                </div>
+                <div class="text-base flex gap-1 items-center" id="contenedor-vidas">
+                    ❤️ ❤️ ❤️
+                </div>
+                <button onclick="volverMenu()" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-2 rounded-lg transition">Salir</button>
+            </div>
+
+            <h2 id="titulo-modo" class="text-lg font-black text-purple-600 mb-3">Modo Fáciles</h2>
+
+            <!-- Grilla Vertical Estilo Ficha (D y U) -->
+            <div class="bg-amber-50/70 border-2 border-amber-300 rounded-2xl p-4 mb-4 flex flex-col items-center shadow-inner">
+                
+                <!-- Tabla de Operación -->
+                <div class="grid grid-cols-3 border-2 border-gray-800 bg-white rounded-lg overflow-hidden shadow-md w-48 text-center font-bold">
+                    
+                    <!-- Fila 0: Cabecera D y U (Fila de Llevadas arriba opcional o espacio) -->
+                    <div class="border-r border-b border-gray-800 bg-gray-100 py-1 text-xs text-gray-500 flex items-center justify-center">Lleva</div>
+                    <div class="border-r border-b border-gray-800 bg-red-600 text-white py-1 text-sm font-black">D</div>
+                    <div class="border-b border-gray-800 bg-blue-600 text-white py-1 text-sm font-black">U</div>
+
+                    <!-- Fila 1: Casilla de Llevada y Operandos fila superior -->
+                    <div class="border-r border-b border-gray-800 bg-yellow-50 flex items-center justify-center p-1">
+                        <input id="input-lleva" type="number" min="0" max="1" class="w-8 h-8 text-center text-red-600 font-black text-lg bg-yellow-100 border border-yellow-400 rounded focus:outline-none focus:ring-2 focus:ring-red-400" placeholder="">
+                    </div>
+                    <div id="d-1" class="border-r border-b border-gray-800 text-2xl flex items-center justify-center py-2 text-gray-800 bg-gray-50">2</div>
+                    <div id="u-1" class="border-b border-gray-800 text-2xl flex items-center justify-center py-2 text-gray-800 bg-gray-50">8</div>
+
+                    <!-- Fila 2: Signo + y Operandos fila inferior -->
+                    <div class="border-r border-b border-gray-800 text-2xl flex items-center justify-center text-indigo-600 bg-gray-50 font-black">+</div>
+                    <div id="d-2" class="border-r border-b border-gray-800 text-2xl flex items-center justify-center py-2 text-gray-800 bg-gray-50">1</div>
+                    <div id="u-2" class="border-b border-gray-800 text-2xl flex items-center justify-center py-2 text-gray-800 bg-gray-50">5</div>
+
+                    <!-- Fila 3: Resultado (Inputs del estudiante) -->
+                    <div class="border-r border-gray-800 bg-gray-100"></div>
+                    <div class="border-r border-gray-800 p-1 bg-emerald-50 flex items-center justify-center">
+                        <input id="input-res-d" type="number" min="0" max="9" class="w-10 h-10 text-center text-2xl font-black text-emerald-700 bg-white border-2 border-emerald-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="?">
+                    </div>
+                    <div class="p-1 bg-emerald-50 flex items-center justify-center">
+                        <input id="input-res-u" type="number" min="0" max="9" class="w-10 h-10 text-center text-2xl font-black text-emerald-700 bg-white border-2 border-emerald-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="?">
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Botón Comprobar -->
+            <button onclick="verificarResultado()" id="btn-comprobar" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-extrabold text-lg py-3 px-6 rounded-2xl shadow-lg transform hover:scale-[1.02] transition mb-3">
+                ✨ Comprobar Resultado
+            </button>
+
+            <!-- Mensaje de Retroalimentación -->
+            <div id="mensaje-feedback" class="h-10 font-bold text-sm flex items-center justify-center"></div>
+        </div>
+
+        <!-- Pantalla de Fin de Juego / Victoria -->
+        <div id="pantalla-fin" class="hidden transition-all duration-300 text-center">
+            <div id="icono-fin" class="text-6xl mb-3 animate-bounce-slow">🏆</div>
+            <h2 id="titulo-fin" class="text-3xl font-extrabold text-indigo-600 mb-2">¡Increíble!</h2>
+            <p id="texto-fin" class="text-gray-600 mb-6 text-base">¡Completaste los 10 ejercicios correctamente!</p>
+            <button onclick="volverMenu()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-extrabold text-lg py-3 px-8 rounded-2xl shadow-lg transform hover:scale-105 transition">
+                Volver al Menú 🏠
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Lógica de la Aplicación -->
+    <script>
+        let modoActual = 'facil';
+        let aciertos = 0;
+        let vidas = 3;
+        let num1 = 0, num2 = 0;
+        let llevaCorrecto = 0;
+        let sumaU = 0, unidadFinal = 0, decenaFinal = 0;
+
+        function iniciarJuego(modo) {
+            modoActual = modo;
+            aciertos = 0;
+            vidas = 3;
+            
+            document.getElementById('pantalla-inicio').classList.add('hidden');
+            document.getElementById('pantalla-fin').classList.add('hidden');
+            document.getElementById('pantalla-juego').classList.remove('hidden');
+            
+            document.getElementById('titulo-modo').innerText = modo === 'facil' ? '🌟 Sumas (1 al 10 y con llevadas)' : '🚀 Retos Mágicos';
+            
+            actualizarVidasUI();
+            generarEjercicio();
+        }
+
+        function actualizarVidasUI() {
+            let corazones = '';
+            for(let i = 0; i < 3; i++) {
+                corazones += i < vidas ? '❤️ ' : '🤍 ';
+            }
+            document.getElementById('contenedor-vidas').innerText = corazones.trim();
+        }
+
+        function generarEjercicio() {
+            document.getElementById('mensaje-feedback').innerHTML = '';
+            document.getElementById('contador-aciertos').innerText = aciertos;
+            
+            // Limpiar inputs
+            document.getElementById('input-lleva').value = '';
+            document.getElementById('input-res-d').value = '';
+            document.getElementById('input-res-u').value = '';
+
+            if (modoActual === 'facil') {
+                // Generar números entre 11 y 38 para practicar unidades y decenas
+                let d1 = Math.floor(Math.random() * 2) + 1; // 1 o 2
+                let u1 = Math.floor(Math.random() * 9) + 1;
+                num1 = d1 * 10 + u1;
+
+                let d2 = Math.floor(Math.random() * 2) + 1; // 1 o 2
+                let u2 = Math.floor(Math.random() * 9) + 1;
+                num2 = d2 * 10 + u2;
+            } else {
+                // Retos más altos (hasta 49 + 25 por ejemplo)
+                let d1 = Math.floor(Math.random() * 3) + 2; // 2 a 4
+                let u1 = Math.floor(Math.random() * 8) + 2;
+                num1 = d1 * 10 + u1;
+
+                let d2 = Math.floor(Math.random() * 2) + 1; // 1 a 2
+                let u2 = Math.floor(Math.random() * 8) + 2;
+                num2 = d2 * 10 + u2;
+            }
+
+            let d1_val = Math.floor(num1 / 10);
+            let u1_val = num1 % 10;
+            let d2_val = Math.floor(num2 / 10);
+            let u2_val = num2 % 10;
+
+            document.getElementById('d-1').innerText = d1_val;
+            document.getElementById('u-1').innerText = u1_val;
+            document.getElementById('d-2').innerText = d2_val;
+            document.getElementById('u-2').innerText = u2_val;
+
+            // Calcular respuestas correctas
+            sumaU = u1_val + u2_val;
+            llevaCorrecto = sumaU >= 10 ? 1 : 0;
+            unidadFinal = sumaU % 10;
+            decenaFinal = d1_val + d2_val + llevaCorrecto;
+        }
+
+        function verificarResultado() {
+            let inputLlevaVal = parseInt(document.getElementById('input-lleva').value) || 0;
+            let inputResDVal = parseInt(document.getElementById('input-res-d').value);
+            let inputResUVal = parseInt(document.getElementById('input-res-u').value);
+            let feedback = document.getElementById('mensaje-feedback');
+
+            // Validar si completó los campos principales
+            if (isNaN(inputResDVal) || isNaN(inputResUVal)) {
+                feedback.innerHTML = '<span class="text-amber-600">⚠️ ¡Escribe los números en las casillas de abajo!</span>';
+                return;
+            }
+
+            // Validar si el lleva es obligatorio y lo puso bien (si aplica)
+            let llevaCorrectoReal = llevaCorrecto;
+            let userLlevaMatch = (llevaCorrectoReal === 0 && (inputLlevaVal === 0 || isNaN(inputLlevaVal))) || (inputLlevaVal === llevaCorrectoReal);
+            let userDMatch = (inputResDVal === decenaFinal);
+            let userUMatch = (inputResUVal === unidadFinal);
+
+            if (userLlevaMatch && userDMatch && userUMatch) {
+                feedback.innerHTML = '<span class="text-emerald-600 text-base">🎉 ¡Excelente! ¡Suma correcta!</span>';
+                aciertos++;
+                document.getElementById('contador-aciertos').innerText = aciertos;
+
+                setTimeout(() => {
+                    if (aciertos >= 10) {
+                        terminarJuego(true);
+                    } else {
+                        generarEjercicio();
+                    }
+                }, 1200);
+
+            } else {
+                vidas--;
+                actualizarVidasUI();
+
+                let mensajeError = "❌ Revisa bien: ";
+                if (!userLlevaMatch) mensajeError += "El número que llevas arriba no es correcto. ";
+                if (!userUMatch) mensajeError += "Las unidades no coinciden. ";
+                if (!userDMatch) mensajeError += "Las decenas no coinciden. ";
+
+                feedback.innerHTML = `<span class="text-rose-600 text-xs">${mensajeError}</span>`;
+
+                if (vidas <= 0) {
+                    setTimeout(() => terminarJuego(false), 1500);
+                }
+            }
+        }
+
+        function terminarJuego(gano) {
+            document.getElementById('pantalla-juego').classList.add('hidden');
+            document.getElementById('pantalla-fin').classList.remove('hidden');
+
+            let iconoFin = document.getElementById('icono-fin');
+            let tituloFin = document.getElementById('titulo-fin');
+            let textoFin = document.getElementById('texto-fin');
+
+            if (gano) {
+                iconoFin.innerText = '🏆🎉';
+                tituloFin.innerText = '¡Lo Lograste!';
+                textoFin.innerText = '¡Felicidades! Completaste los 10 ejercicios con éxito en la cuadrícula.';
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            } else {
+                iconoFin.innerText = '💪🔄';
+                tituloFin.innerText = '¡Buen Esfuerzo!';
+                textoFin.innerText = 'Te quedaste sin vidas, ¡pero puedes volver a empezar para lograr los 10 aciertos!';
+            }
+        }
+
+        function volverMenu() {
+            document.getElementById('pantalla-juego').classList.add('hidden');
+            document.getElementById('pantalla-fin').classList.add('hidden');
+            document.getElementById('pantalla-inicio').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
